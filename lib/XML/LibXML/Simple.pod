@@ -55,21 +55,41 @@ section of this manual page.
 =head1 FUNCTIONS
 
 The functions C<XMLin> (exported implictly) and C<xml_in>
-(exported on demand) simply call C<< XML::Simple->new->XMLin() >>
+(exported on request) simply call C<< XML::Simple->new->XMLin() >>
 with the provided parameters.
 
 =head1 DETAILS
 
 =head2 Differences with XML::Simple
 
+In general, the output and the options are equivalent, although this
+module has some differences with XML::Simple to be aware of.
+
+=over 4
+
+=item .
+
 Only L<XMLin()|XML::LibXML::Simple/"Translators"> is supported: if you want to write XML the use a schema
 (for instance with XML::Compile).  Do not attempt to create XML by
 hand!  If you still think you need it, then have a look at XMLout() as
 implemented by XML::Simple or any of a zillion template systems.
 
+=item .
+
 IMO, you should use a templating system if you want variables filled-in
-in the input: it is not a task for this module.  Also, empty elements
-should not be removed: empty has a meaning.
+in the input: it is not a task for this module.
+
+=item .
+
+Also, empty elements are not removed: being empty has a meaning which
+should not be ignored.
+
+=item .
+
+There are a few small differences in the result of the C<forcearray> option,
+because XML::Simple seems to behave inconsequently.
+
+=back
 
 =head2 Parameter XML-DATA
 

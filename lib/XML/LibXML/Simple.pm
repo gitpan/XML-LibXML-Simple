@@ -1,9 +1,10 @@
 # Copyrights 2008 by Mark Overmeer.
+#  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
 # Pod stripped from pm file by OODoc 1.03.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.10';
+$VERSION = '0.11';
 use base 'Exporter';
 use strict;
 use warnings;
@@ -37,7 +38,6 @@ sub new(@)
 }
 
 
-my $parser;
 sub XMLin
 {   my $self = @_ > 1 && UNIVERSAL::isa($_[0], __PACKAGE__) ? shift
       : __PACKAGE__->new;
@@ -45,24 +45,9 @@ sub XMLin
 
     my $this   = $self->_take_opts(@_);
     my $opts   = $self->_init($self->{opts}, $this);
-    $parser  ||= XML::LibXML->new;
 
-    $target    = $self->default_data_source($opts) unless defined $target;
-    $target    = \*STDIN if $target eq '-';
-
-    my $xml
-    = UNIVERSAL::isa($target,'XML::LibXML::Document')? $target
-    : UNIVERSAL::isa($target,'XML::LibXML::Element') ? $target
-    : ref $target eq 'SCALAR'      ? $parser->parse_string($$target)
-    : ref $target                  ? $parser->parse_fh($target)
-    : $target =~ m{^\s*<.*?>\s*$}s ? $parser->parse_string($target)
-    :    $parser->parse_file
-            ($self->find_xml_file($target, @{$opts->{searchpath}}));
-
-    $xml or return;
-
-    $xml = $xml->documentElement
-        if $xml->isa('XML::LibXML::Document');
+    my $xml    = $self->_get_xml($target, $opts)
+        or return;
 
     my $top  = $self->collapse($xml, $opts);
     if($opts->{keeproot})
@@ -72,6 +57,30 @@ sub XMLin
     }
 
     $top;
+}
+
+my $parser;
+sub _get_xml($$)
+{   my ($self, $source, $opts) = @_;
+
+    $source    = $self->default_data_source($opts) unless defined $source;
+    $source    = \*STDIN if $source eq '-';
+
+    $parser  ||= XML::LibXML->new;
+
+    my $xml
+      = UNIVERSAL::isa($source,'XML::LibXML::Document') ? $source
+      : UNIVERSAL::isa($source,'XML::LibXML::Element') ? $source
+      : ref $source eq 'SCALAR'      ? $parser->parse_string($$source)
+      : ref $source                  ? $parser->parse_fh($source)
+      : $source =~ m{^\s*<.*?>\s*$}s ? $parser->parse_string($source)
+      :    $parser->parse_file
+              ($self->find_xml_file($source, @{$opts->{searchpath}}));
+
+    $xml = $xml->documentElement
+         if $xml->isa('XML::LibXML::Document');
+
+    $xml;
 }
 
 sub _take_opts(@)
