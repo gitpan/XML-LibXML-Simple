@@ -1,10 +1,11 @@
 # Copyrights 2008 by Mark Overmeer.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 1.04.
+# Pod stripped from pm file by OODoc 1.05.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.12';
+$VERSION = '0.13';
+
 use base 'Exporter';
 use strict;
 use warnings;
@@ -24,7 +25,7 @@ use Data::Dumper;  #to be removed
 my %known_opts = map { ($_ => 1) }
   qw(keyattr keeproot forcecontent contentkey noattr searchpath
      forcearray grouptags nsexpand normalisespace normalizespace
-     valueattr);
+     valueattr nsstrip);
 
 my @DefKeyAttr     = qw(name key id);
 my $DefContentKey  = qq(content);
@@ -71,9 +72,9 @@ sub _get_xml($$)
     my $xml
       = UNIVERSAL::isa($source,'XML::LibXML::Document') ? $source
       : UNIVERSAL::isa($source,'XML::LibXML::Element') ? $source
-      : ref $source eq 'SCALAR'      ? $parser->parse_string($$source)
-      : ref $source                  ? $parser->parse_fh($source)
-      : $source =~ m{^\s*<.*?>\s*$}s ? $parser->parse_string($source)
+      : ref $source eq 'SCALAR' ? $parser->parse_string($$source)
+      : ref $source             ? $parser->parse_fh($source)
+      : $source =~ m{^\s*\<.*?\>\s*$}s ? $parser->parse_string($source)
       :    $parser->parse_file
               ($self->find_xml_file($source, @{$opts->{searchpath}}));
 
@@ -239,7 +240,12 @@ sub collapse($$)
         {   my $value = $attr->value;
             $value = $self->normalise_space($value)
                 if $opts->{normalisespace}==2;
-            my $n = $opts->{nsexpand} ? _expand_name($attr) : $attr->nodeName;
+
+            my $n  = !$attr->isa('XML::LibXML::Attr') ? $attr->nodeName
+                   : $opts->{nsexpand}                ? _expand_name($attr)
+                   : $opts->{nsstrip}                 ? $attr->localName
+                   :                                    $attr->nodeName;
+
             _add_kv \%data, $n, $value, $opts;
         }
     }
@@ -252,7 +258,9 @@ sub collapse($$)
         if($child->isa('XML::LibXML::Element'))
         {   $nr_elems++;
             my $v = $self->collapse($child, $opts);
-            my $n = $opts->{nsexpand} ? _expand_name($child) : $child->nodeName;
+            my $n = $opts->{nsexpand} ? _expand_name($child)
+                  : $opts->{nsstrip}  ? $child->localName
+                  :                     $child->nodeName;
             _add_kv \%data, $n, $v, $opts if defined $v;
         }
         elsif($child->isa('XML::LibXML::Text'))

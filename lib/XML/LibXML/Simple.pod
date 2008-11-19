@@ -416,8 +416,8 @@ to parse to this data structure:
                 }
     }
 
-The '+' indicates that the value of the key attribute should be copied rather
-than moved to the folded hash key.
+The '+' indicates that the value of the key attribute should be copied
+rather than moved to the folded hash key.
 
 A '-' prefix would produce this result:
 
@@ -443,7 +443,7 @@ When used with C<XMLin()>, any attributes in the XML will be ignored.
 This option controls how whitespace in text content is handled.  Recognised
 values for the option are:
 
-=over 8
+=over 4
 
 =item 0
 
@@ -502,6 +502,51 @@ instead of this (the default):
     colour => { value => 'red' },
     size   => { value => 'XXL' }
   }
+
+=item NsExpand => 0  I<advised>
+
+When name-spaces are used, the default behavior is to include the
+prefix in the key name.  However, this is very dangerous: the prefixes
+can be changed without a change of the XML message meaning.  Therefore,
+you can better use this C<NsExpand> option.  The downside, however, is
+that the labels get very long.
+
+Without this option:
+
+  <record xmlns:x="http://xyz">
+    <x:field1>42</x:field1>
+  </record>
+  <record xmlns:y="http://xyz">
+    <y:field1>42</y:field1>
+  </record>
+
+translates into
+
+  { 'x:field1' => 42 }
+  { 'y:field1' => 42 }
+
+but both source component have exactly the same meaning.  When C<NsExpand>
+is used, the result is:
+
+  { '{http://xyz}field1' => 42 }
+  { '{http://xyz}field1' => 42 }
+
+Of course, addressing these fields is more work.  It is advised to implement
+it like this:
+
+  my $ns = 'http://xyz';
+  $data->{"{$ns}field1"};
+
+=item NsStrip => 0 I<sloppy coding>
+
+[not available in XML::Simple]
+Namespaces are really important to avoid name collissions, but they are
+a bit of a hassle.  To do it correctly, use option C<NsExpand>.  To do
+it sloppy, use C<NsStrip>.  With this option set, the above example will
+return
+
+  { field1 => 42 }
+  { field1 => 42 }
 
 =back
 
