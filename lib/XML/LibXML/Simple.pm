@@ -1,10 +1,10 @@
-# Copyrights 2008-2010 by Mark Overmeer.
+# Copyrights 2008-2011 by Mark Overmeer.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 1.06.
+# Pod stripped from pm file by OODoc 2.00.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 use base 'Exporter';
 use strict;
@@ -61,14 +61,12 @@ sub XMLin
 }
 *xml_in = \&XMLin;
 
-my $parser;
 sub _get_xml($$)
 {   my ($self, $source, $opts) = @_;
 
     $source    = $self->default_data_source($opts) unless defined $source;
     $source    = \*STDIN if $source eq '-';
-
-    $parser  ||= XML::LibXML->new;
+    my $parser = XML::LibXML->new;
 
     my $xml
       = UNIVERSAL::isa($source,'XML::LibXML::Document') ? $source

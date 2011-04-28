@@ -28,9 +28,9 @@ uses plain Perl or SAX parsers.
 
 =head2 Constructors
 
-XML::LibXML::Simple-E<gt>B<new>(OPTIONS)
-
 =over 4
+
+=item XML::LibXML::Simple-E<gt>B<new>(OPTIONS)
 
 Instantiate an object, which can be used to call L<XMLin()|XML::LibXML::Simple/"Translators"> on.  You can
 provide OPTIONS to this constructor (to be reused for each call to XMLin)
@@ -43,9 +43,9 @@ section of this manual page.
 
 =head2 Translators
 
-$obj-E<gt>B<XMLin>(XML-DATA, OPTIONS)
-
 =over 4
+
+=item $obj-E<gt>B<XMLin>(XML-DATA, OPTIONS)
 
 For XML-DATA and descriptions of the OPTIONS see the L</DETAILS>
 section of this manual page.
@@ -549,6 +549,149 @@ return
   { field1 => 42 }
 
 =back
+
+=head1 EXAMPLES
+
+When C<XMLin()> reads the following very simple piece of XML:
+
+    <opt username="testuser" password="frodo"></opt>
+
+it returns the following data structure:
+
+    {
+      'username' => 'testuser',
+      'password' => 'frodo'
+    }
+
+The identical result could have been produced with this alternative XML:
+
+    <opt username="testuser" password="frodo" />
+
+Or this (although see 'ForceArray' option for variations):
+
+    <opt>
+      <username>testuser</username>
+      <password>frodo</password>
+    </opt>
+
+Repeated nested elements are represented as anonymous arrays:
+
+    <opt>
+      <person firstname="Joe" lastname="Smith">
+        <email>joe@smith.com</email>
+        <email>jsmith@yahoo.com</email>
+      </person>
+      <person firstname="Bob" lastname="Smith">
+        <email>bob@smith.com</email>
+      </person>
+    </opt>
+
+    {
+      'person' => [
+                    {
+                      'email' => [
+                                   'joe@smith.com',
+                                   'jsmith@yahoo.com'
+                                 ],
+                      'firstname' => 'Joe',
+                      'lastname' => 'Smith'
+                    },
+                    {
+                      'email' => 'bob@smith.com',
+                      'firstname' => 'Bob',
+                      'lastname' => 'Smith'
+                    }
+                  ]
+    }
+
+Nested elements with a recognised key attribute are transformed (folded) from
+an array into a hash keyed on the value of that attribute (see the C<KeyAttr>
+option):
+
+    <opt>
+      <person key="jsmith" firstname="Joe" lastname="Smith" />
+      <person key="tsmith" firstname="Tom" lastname="Smith" />
+      <person key="jbloggs" firstname="Joe" lastname="Bloggs" />
+    </opt>
+
+    {
+      'person' => {
+                    'jbloggs' => {
+                                   'firstname' => 'Joe',
+                                   'lastname' => 'Bloggs'
+                                 },
+                    'tsmith' => {
+                                  'firstname' => 'Tom',
+                                  'lastname' => 'Smith'
+                                },
+                    'jsmith' => {
+                                  'firstname' => 'Joe',
+                                  'lastname' => 'Smith'
+                                }
+                  }
+    }
+
+The <anon> tag can be used to form anonymous arrays:
+
+    <opt>
+      <head><anon>Col 1</anon><anon>Col 2</anon><anon>Col 3</anon></head>
+      <data><anon>R1C1</anon><anon>R1C2</anon><anon>R1C3</anon></data>
+      <data><anon>R2C1</anon><anon>R2C2</anon><anon>R2C3</anon></data>
+      <data><anon>R3C1</anon><anon>R3C2</anon><anon>R3C3</anon></data>
+    </opt>
+
+    {
+      'head' => [
+                  [ 'Col 1', 'Col 2', 'Col 3' ]
+                ],
+      'data' => [
+                  [ 'R1C1', 'R1C2', 'R1C3' ],
+                  [ 'R2C1', 'R2C2', 'R2C3' ],
+                  [ 'R3C1', 'R3C2', 'R3C3' ]
+                ]
+    }
+
+Anonymous arrays can be nested to arbirtrary levels and as a special case, if
+the surrounding tags for an XML document contain only an anonymous array the
+arrayref will be returned directly rather than the usual hashref:
+
+    <opt>
+      <anon><anon>Col 1</anon><anon>Col 2</anon></anon>
+      <anon><anon>R1C1</anon><anon>R1C2</anon></anon>
+      <anon><anon>R2C1</anon><anon>R2C2</anon></anon>
+    </opt>
+
+    [
+      [ 'Col 1', 'Col 2' ],
+      [ 'R1C1', 'R1C2' ],
+      [ 'R2C1', 'R2C2' ]
+    ]
+
+Elements which only contain text content will simply be represented as a
+scalar.  Where an element has both attributes and text content, the element
+will be represented as a hashref with the text content in the 'content' key
+(see the C<ContentKey> option):
+
+  <opt>
+    <one>first</one>
+    <two attr="value">second</two>
+  </opt>
+
+  {
+    'one' => 'first',
+    'two' => { 'attr' => 'value', 'content' => 'second' }
+  }
+
+Mixed content (elements which contain both text content and nested elements)
+will be not be represented in a useful way - element order and significant
+whitespace will be lost.  If you need to work with mixed content, then
+XML::Simple is not the right tool for your job - check out the next section.
+
+=head1 SEE ALSO
+
+L<XML::Compile> for processing XML when a schema is available
+
+L<XML::Simple>, the SAX and original implementation
 
 =head1 COPYRIGHT
 
