@@ -4,7 +4,7 @@
 # Pod stripped from pm file by OODoc 2.00.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.15';
+$VERSION = '0.90';
 
 use base 'Exporter';
 use strict;
@@ -25,7 +25,7 @@ use Data::Dumper;  #to be removed
 my %known_opts = map { ($_ => 1) }
   qw(keyattr keeproot forcecontent contentkey noattr searchpath
      forcearray grouptags nsexpand normalisespace normalizespace
-     valueattr nsstrip);
+     valueattr nsstrip parser parseropts);
 
 my @DefKeyAttr     = qw(name key id);
 my $DefContentKey  = qq(content);
@@ -34,7 +34,12 @@ my $DefContentKey  = qq(content);
 sub new(@)
 {   my $class = shift;
     my $self  = bless {}, $class;
-    $self->{opts} = $self->_take_opts(@_);
+    my $opts  = $self->{opts} = $self->_take_opts(@_);
+
+    # parser object cannot be reused
+    !defined $opts->{parser}
+        or error __x"parser option for XMLin only";
+
     $self;
 }
 
@@ -64,9 +69,14 @@ sub XMLin
 sub _get_xml($$)
 {   my ($self, $source, $opts) = @_;
 
-    $source    = $self->default_data_source($opts) unless defined $source;
-    $source    = \*STDIN if $source eq '-';
-    my $parser = XML::LibXML->new;
+    $source    = $self->default_data_source($opts)
+        unless defined $source;
+
+    $source    = \*STDIN
+        if $source eq '-';
+
+    my $parser = $opts->{parser}
+              || $self->_create_parser($opts->{parseropts});
 
     my $xml
       = UNIVERSAL::isa($source,'XML::LibXML::Document') ? $source
@@ -81,6 +91,22 @@ sub _get_xml($$)
          if $xml->isa('XML::LibXML::Document');
 
     $xml;
+}
+
+sub _create_parser(@)
+{   my $self = shift;
+    my @popt = @_ != 1 ? @_ : ref $_[0] eq 'HASH' ? %{$_[0]} : @{$_[0]};
+
+    XML::LibXML->new
+      ( line_numbers    => 1
+      , no_network      => 1
+      , expand_xinclude => 0
+      , expand_entities => 1
+      , load_ext_dtd    => 0
+      , ext_ent_handler =>
+           sub { alert __x"parsing external entities disabled"; '' }
+      , @popt
+      );
 }
 
 sub _take_opts(@)
@@ -170,6 +196,8 @@ sub _init($$)
     !$opt{grouptags} || ref $opt{grouptags} eq 'HASH'
         or croak "Illegal value for 'GroupTags' option -expected a hashref";
 
+    $opt{parseropts} ||= {};
+
     \%opt;
 }
 
@@ -218,9 +246,9 @@ sub _add_kv($$$$)
     $d->{$k};
 }
 
-# Takes the parse tree that XML::Parser produced from the supplied XML and
-# recurses through it 'collapsing' unnecessary levels of indirection (nested
-# arrays etc) to produce a data structure that is easier to work with.
+# Takes the parse tree that XML::LibXML::Parser produced from the supplied
+# XML and recurse through it 'collapsing' unnecessary levels of indirection
+# (nested arrays etc) to produce a data structure that is easier to work with.
 
 sub _expand_name($)
 {   my $node = shift;

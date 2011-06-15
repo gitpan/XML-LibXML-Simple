@@ -67,24 +67,23 @@ module has some differences with XML::Simple to be aware of.
 
 =over 4
 
-=item .
+=item only L<XMLin()|XML::LibXML::Simple/"Translators"> is supported
 
-Only L<XMLin()|XML::LibXML::Simple/"Translators"> is supported: if you want to write XML the use a schema
-(for instance with XML::Compile).  Do not attempt to create XML by
-hand!  If you still think you need it, then have a look at XMLout() as
-implemented by XML::Simple or any of a zillion template systems.
+If you want to write XML then use a schema (for instance with
+XML::Compile). Do not attempt to create XML by hand!  If you still
+think you need it, then have a look at XMLout() as implemented by
+XML::Simple or any of a zillion template systems.
 
-=item .
+=item no "variables" option
 
 IMO, you should use a templating system if you want variables filled-in
 in the input: it is not a task for this module.
 
-=item .
+=item empty elements are not removed
 
-Also, empty elements are not removed: being empty has a meaning which
-should not be ignored.
+Being empty has a meaning which should not be ignored.
 
-=item .
+=item ForceArray options
 
 There are a few small differences in the result of the C<forcearray> option,
 because XML::Simple seems to behave inconsequently.
@@ -465,6 +464,23 @@ whitespace is normalised in all text content
 
 Note: you can spell this option with a 'z' if that is more natural for you.
 
+=item Parser => OBJECT
+
+You may pass your own XML::LibXML object, in stead of having one
+created for you. This is useful when you need specific configuration
+on that object (See XML::LibXML::Parser) or have implemented your
+own extension to that object.
+
+The internally created parser object is configured in safe mode.
+Read the XML::LibXML::Parser manual about security issues with
+certain parameter settings.  The default is unsafe!
+
+=item ParserOpts => HASH|ARRAY
+
+Pass parameters to the creation of a new internal parser object. You
+can overrule the options which will create a safe parser. It may be more
+readible to use the C<Parser> parameter.
+
 =item SearchPath => [ list ] I<# handy>
 
 If you pass C<XMLin()> a filename, but the filename include no directory
@@ -479,7 +495,7 @@ If the first parameter to C<XMLin()> is undefined, the default SearchPath
 will contain only the directory in which the script itself is located.
 Otherwise the default SearchPath will be empty.  
 
-=item ValueAttr => [ names ] I<# in - handy>
+=item ValueAttr => [ names ] I<# handy>
 
 Use this option to deal elements which always have a single attribute and no
 content.  Eg:
