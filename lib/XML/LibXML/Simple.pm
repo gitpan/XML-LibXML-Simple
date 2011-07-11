@@ -4,7 +4,7 @@
 # Pod stripped from pm file by OODoc 2.00.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.90';
+$VERSION = '0.91';
 
 use base 'Exporter';
 use strict;
@@ -154,15 +154,19 @@ sub _init($$)
 
     $opt{searchpath} ||= [];
     ref $opt{searchpath} eq 'ARRAY'
-        or $opt{searchpath}   = [ $opt{searchpath} ];
+        or $opt{searchpath} = [ $opt{searchpath} ];
 
-    my $fa = delete $opt{forcearray};
-    my @fa = ref $fa eq 'ARRAY' ? @$fa : defined $fa ? $fa : ();
-    $opt{forcearray_always}   = (@fa==1 && !ref $fa[0] && $fa[0]);
-    $opt{forcearray_regex}    = [ grep {ref $_ eq 'Regexp'} @fa ];
-
-    $opt{forcearray_elem}     = {};
-    $opt{forcearray_elem}{$_} = 1 for grep !ref $_, @fa;
+    my $fa = delete $opt{forcearray} || 0;
+    my (@fa_regex, %fa_elem);
+    if(ref $fa)
+     {   foreach (ref $fa eq 'ARRAY' ? @$fa : $fa)
+         {   if(ref $_ eq 'Regexp') { push @fa_regex, $_ }
+             else { $fa_elem{$_} = 1 }
+         }
+    }
+    else { $opt{forcearray_always} = $fa }
+    $opt{forcearray_regex} = \@fa_regex;
+    $opt{forcearray_elem}  = \%fa_elem;
 
     # Special cleanup for {keyattr} which could be arrayref or hashref,
     # which behave differently.
@@ -226,23 +230,16 @@ sub _add_kv($$$$)
 
     if(defined $d->{$k})
     {   # Combine duplicate attributes into arrayref if required
-        if(ref $d->{$k} eq 'ARRAY')
-             { push @{$d->{$k}}, $v }
-        else { $d->{$k} = [ $d->{$k}, $v ] }
-    }
-    elsif(ref $v eq 'ARRAY')
-    {   push @{$d->{$k}}, $v }
+        if(ref $d->{$k} eq 'ARRAY')   { push @{$d->{$k}}, $v }
+        else                          { $d->{$k} = [ $d->{$k}, $v ] } }
+    elsif(ref $v eq 'ARRAY')          { push @{$d->{$k}}, $v }
     elsif(ref $v eq 'HASH'
        && $k ne $opts->{contentkey} 
-       && $opts->{forcearray_always})
-    {   push @{$d->{$k}}, $v }
+       && $opts->{forcearray_always}) { push @{$d->{$k}}, $v }
     elsif($opts->{forcearray_elem}{$k}
         || grep {$k =~ $_} @{$opts->{forcearray_regex}}
-         )
-    {   push @{$d->{$k}}, $v }
-    else
-    {   $d->{$k} = $v;
-    }
+         )                            { push @{$d->{$k}}, $v }
+    else                              { $d->{$k} = $v }
     $d->{$k};
 }
 
