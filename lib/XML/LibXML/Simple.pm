@@ -1,12 +1,13 @@
-# Copyrights 2008-2011 by Mark Overmeer.
+# Copyrights 2008-2012 by [Mark Overmeer].
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
 # Pod stripped from pm file by OODoc 2.00.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.91';
+$VERSION = '0.92';
 
 use base 'Exporter';
+
 use strict;
 use warnings;
 
@@ -80,7 +81,7 @@ sub _get_xml($$)
 
     my $xml
       = UNIVERSAL::isa($source,'XML::LibXML::Document') ? $source
-      : UNIVERSAL::isa($source,'XML::LibXML::Element') ? $source
+      : UNIVERSAL::isa($source,'XML::LibXML::Element' ) ? $source
       : ref $source eq 'SCALAR' ? $parser->parse_string($$source)
       : ref $source             ? $parser->parse_fh($source)
       : $source =~ m{^\s*\<.*?\>\s*$}s ? $parser->parse_string($source)
@@ -192,13 +193,13 @@ sub _init($$)
     # Special cleanup for {valueattr} which could be arrayref or hashref
 
     my $va = delete $opt{valueattr} || {};
-    $va = { map { ($_ => 1) } @$va } if ref $va eq 'ARRAY';
+    $va = +{ map +($_ => 1), @$va } if ref $va eq 'ARRAY';
     $opt{valueattrlist} = $va;
 
     # make sure there's nothing weird in {grouptags}
 
     !$opt{grouptags} || ref $opt{grouptags} eq 'HASH'
-        or croak "Illegal value for 'GroupTags' option -expected a hashref";
+         or croak "Illegal value for 'GroupTags' option -expected a hashref";
 
     $opt{parseropts} ||= {};
 
@@ -237,7 +238,7 @@ sub _add_kv($$$$)
        && $k ne $opts->{contentkey} 
        && $opts->{forcearray_always}) { push @{$d->{$k}}, $v }
     elsif($opts->{forcearray_elem}{$k}
-        || grep {$k =~ $_} @{$opts->{forcearray_regex}}
+        || grep $k =~ $_, @{$opts->{forcearray_regex}}
          )                            { push @{$d->{$k}}, $v }
     else                              { $d->{$k} = $v }
     $d->{$k};
@@ -304,14 +305,14 @@ sub collapse($$)
     # Roll up 'value' attributes (but only if no nested elements)
 
     if(keys %data==1)
-    {    my $k = (keys %data)[0];
+    {    my ($k) = keys %data;
          return $data{$k} if $opts->{valueattrlist}{$k};
     }
 
     # Turn arrayrefs into hashrefs if key fields present
 
     if($opts->{keyattr})
-    {   while(my ($key,$val) = each %data)
+    {   while(my ($key, $val) = each %data)
         {   $data{$key} = $self->array_to_hash($key, $val, $opts)
                 if ref $val eq 'ARRAY';
         }
@@ -457,7 +458,7 @@ sub array_to_hash($$$$)
         return \%out;
     }
 
-    $out{$_} =  $out{$_}{$contentkey} for keys %out;
+    $out{$_} = $out{$_}{$contentkey} for keys %out;
     \%out;
 }
   

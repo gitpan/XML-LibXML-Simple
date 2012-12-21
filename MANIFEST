@@ -11,4 +11,5 @@ t/99pod.t
 t/srt.xml
 t/subdir/test2.xml
 t/test1.xml
-META.yml                                 Module meta-data (added by MakeMaker)
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
