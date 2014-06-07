@@ -1,10 +1,10 @@
-# Copyrights 2008-2013 by [Mark Overmeer].
+# Copyrights 2008-2014 by [Mark Overmeer].
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
 # Pod stripped from pm file by OODoc 2.01.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.93';
+$VERSION = '0.94';
 
 use base 'Exporter';
 
@@ -14,10 +14,10 @@ use warnings;
 our @EXPORT    = qw(XMLin);
 our @EXPORT_OK = qw(xml_in);
 
-use XML::LibXML    ();
-use File::Slurp    qw/read_file/;
-use File::Basename qw/fileparse/;
-use File::Spec     ();
+use XML::LibXML       ();
+use File::Slurp::Tiny qw/read_file/;
+use File::Basename    qw/fileparse/;
+use File::Spec        ();
 use Carp;
 
 use Data::Dumper;  #to be removed
