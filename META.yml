@@ -21,4 +21,4 @@ requires:
   File::Slurp::Tiny: 0
   Test::More: 0.54
   XML::LibXML: 1.64
-version: 0.94
+version: 0.95

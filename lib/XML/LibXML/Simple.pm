@@ -4,7 +4,7 @@
 # Pod stripped from pm file by OODoc 2.01.
 package XML::LibXML::Simple;
 use vars '$VERSION';
-$VERSION = '0.94';
+$VERSION = '0.95';
 
 use base 'Exporter';
 
@@ -23,7 +23,7 @@ use Carp;
 use Data::Dumper;  #to be removed
 
 
-my %known_opts = map { ($_ => 1) }
+my %known_opts = map +($_ => 1),
   qw(keyattr keeproot forcecontent contentkey noattr searchpath
      forcearray grouptags nsexpand normalisespace normalizespace
      valueattr nsstrip parser parseropts);
@@ -31,6 +31,7 @@ my %known_opts = map { ($_ => 1) }
 my @DefKeyAttr     = qw(name key id);
 my $DefContentKey  = qq(content);
 
+#-------------
 
 sub new(@)
 {   my $class = shift;
@@ -44,6 +45,7 @@ sub new(@)
     $self;
 }
 
+#-------------
 
 sub XMLin
 {   my $self = @_ > 1 && UNIVERSAL::isa($_[0], __PACKAGE__) ? shift
@@ -454,7 +456,9 @@ sub array_to_hash($$$$)
 
     # first go through the values, checking that they are fit to collapse
     foreach my $v (values %out)
-    {   next if ref $v eq 'HASH' && keys %$v == 1 && $v->{$contentkey};
+    {   next if !defined $v;
+        next if ref $v eq 'HASH' && keys %$v == 1 && exists $v->{$contentkey};
+        next if ref $v eq 'HASH' && !keys %$v;
         return \%out;
     }
 
